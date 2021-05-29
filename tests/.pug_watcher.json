@@ -1,0 +1,5 @@
+{
+  "debug": true,
+  "path": "src_test:dist_test",
+  "watch": true
+}

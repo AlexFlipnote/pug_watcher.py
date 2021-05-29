@@ -1,0 +1,3 @@
+pypugjs
+jinja2
+watchgod
