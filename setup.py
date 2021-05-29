@@ -13,7 +13,7 @@ with open("requirements.txt") as f:
 
 
 setup(
-    name="pug_watcher",
+    name="pug-watcher",
     author="AlexFlipnote",
     url="https://github.com/AlexFlipnote/pug_watcher.py",
     version=version,
