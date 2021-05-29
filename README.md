@@ -14,8 +14,8 @@ By simply writing `pug_watcher` in the console, you will be shown all available 
 There is a config file you can use to avoid having to use every single argument available in command arguments. Simply create a file called `.pug_watcher.json`. The file accepts the following arguments:
 ```json
 {
-  "watch": bool, // If it should watch the paths in question for changes (Default: false)
-  "path": str, // The paths to watch/compile like 'source/dir:dest/dir' (Default: src:dist)
-  "debug": bool // If the compiler should show what it does (Default: false)
+  "watch": "bool", // If it should watch the paths in question for changes (Default: false)
+  "path": "str", // The paths to watch/compile like 'source/dir:dest/dir' (Default: src:dist)
+  "debug": "bool" // If the compiler should show what it does (Default: false)
 }
 ```
