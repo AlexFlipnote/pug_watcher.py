@@ -61,7 +61,8 @@ def shell():
     settings = {
         "watch": config.get("watch", args.watch),
         "path": config.get("path", args.path),
-        "debug": config.get("debug", args.debug)
+        "debug": config.get("debug", args.debug),
+        "variables": config.get("variables", {})
     }
 
     if settings["path"]:
@@ -76,18 +77,25 @@ def shell():
     pug = Pug(src, dest, debug=settings["debug"])
 
     if settings["watch"]:
+        print("Compiling everything first...")
+        pug.compiler(variables=settings["variables"])
+
         print(f"Started watcher from source folder '{src}' to destination folder '{dest}'")
         for changes in watch(src):
             if len(changes) == 1:
                 change, file = next(iter(changes), (None, ""))
                 if change == 2 and file:
-                    pug.compiler(everything=False, watch_file=file)
+                    pug.compiler(
+                        everything=False,
+                        watch_file=file,
+                        variables=settings["variables"]
+                    )
                 elif change == 3:
                     pug.old_files()
     else:
         print(f"Compiling from source folder '{src}' to destination folder '{dest}'")
         before = time.monotonic()
-        pug.compiler()
+        pug.compiler(variables=settings["variables"])
         print(f"Done compiling | {int((time.monotonic() - before) * 1000)}ms")
 
 

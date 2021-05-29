@@ -22,12 +22,12 @@ class Pug:
         if self.debug:
             print(text)
 
-    def render(self, path: str, filename: str):
+    def render(self, path: str, filename: str, variables: dict = {}):
         pretty_location = path.replace(os.sep, "/")
         self.print_debug(f"RENDER: {pretty_location} -> {filename}")
 
         try:
-            return self.env.get_template(filename).render()
+            return self.env.get_template(filename).render(variables)
         except Exception as e:
             print(f"ERROR {pretty_location} -> {filename}: {e}")
 
@@ -50,7 +50,7 @@ class Pug:
                     os.remove(pwd)
                     self.print_debug(f"DELETE: {pwd}")
 
-    def compile_pug(self, file: str, path: str = None):
+    def compile_pug(self, file: str, path: str = None, variables: dict = {}):
         if not path:
             path = os.path.dirname(file)
             file = os.path.basename(file)
@@ -63,7 +63,7 @@ class Pug:
 
         dist = pwd.replace(self.src, self.dest)
         if re.compile(self.compile).search(file):
-            data = self.render(path, file)
+            data = self.render(path, file, variables)
             dist = dist.replace(".pug", ".html")
         else:
             data = self.read(pwd)
@@ -73,12 +73,12 @@ class Pug:
         else:
             print(f"ERROR {pwd}: Data content was empty, skipping")
 
-    def compiler(self, everything: bool = True, watch_file: str = None):
+    def compiler(self, everything: bool = True, watch_file: str = None, variables: dict = {}):
         if everything:
             for path, dirs, files in os.walk(self.src):
                 for file in files:
-                    self.compile_pug(file, path)
+                    self.compile_pug(file, path, variables)
         else:
-            self.compile_pug(watch_file)
+            self.compile_pug(watch_file, variables=variables)
 
         self.old_files()

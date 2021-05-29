@@ -1,5 +1,9 @@
 {
   "debug": true,
   "path": "src_test:dist_test",
-  "watch": true
+  "watch": true,
+  "variables": {
+    "name": "AlexFlipnote",
+    "stuff": "coding, yes yes"
+  }
 }
