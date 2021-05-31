@@ -24,31 +24,46 @@ class Pug:
 
     def render(self, path: str, filename: str, variables: dict = {}):
         pretty_location = path.replace(os.sep, "/")
+        pug_file_location = pretty_location.replace(self.src, "./")
         self.print_debug(f"RENDER: {pretty_location} -> {filename}")
 
         try:
-            return self.env.get_template(filename).render(variables)
+            return self.env.get_template(f"{pug_file_location}/{filename}").render(variables)
         except Exception as e:
             print(f"ERROR {pretty_location} -> {filename}: {e}")
 
     def read(self, location: str, encoding="utf8"):
         with open(location, "r", encoding=encoding) as f:
             self.print_debug(f"READ: {location}")
-            return f.read()
+            try:
+                return f.read()
+            except UnicodeDecodeError:
+                return f
 
     def write(self, location: str, data: str, encoding="utf8"):
+        if not os.path.exists(os.path.dirname(location)):
+            os.makedirs(os.path.dirname(location))
+
         with open(location, "w", encoding=encoding) as f:
             self.print_debug(f"WRITE: {location}")
-            return f.write(data)
+            return f.write(str(data))
 
     def old_files(self):
         for path, dirs, files in os.walk(self.dest):
+            # Remove unused files
             for file in files:
                 pwd = os.path.join(path, file)
                 dist = pwd.replace(self.dest, self.src).replace(".html", ".pug")
                 if not os.path.exists(dist):
                     os.remove(pwd)
                     self.print_debug(f"DELETE: {pwd}")
+
+            # Remove empty folders
+            for folder in dirs:
+                folder_path = f"{path}/{folder}"
+                if len(os.listdir(folder_path)) == 0:
+                    os.rmdir(folder_path)
+                    self.print_debug(f"DELETE: {folder_path}")
 
     def compile_pug(self, file: str, path: str = None, variables: dict = {}):
         if not path:
