@@ -33,20 +33,25 @@ class Pug:
             print(f"ERROR {pretty_location} -> {filename}: {e}")
 
     def read(self, location: str, encoding="utf8"):
-        with open(location, "r", encoding=encoding) as f:
-            self.print_debug(f"READ: {location}")
-            try:
+        self.print_debug(f"READ: {location}")
+        try:
+            with open(location, "r", encoding=encoding) as f:
                 return f.read()
-            except UnicodeDecodeError:
-                return f
+        except UnicodeDecodeError:
+            with open(location, "rb") as f:
+                return f.read()
 
     def write(self, location: str, data: str, encoding="utf8"):
         if not os.path.exists(os.path.dirname(location)):
             os.makedirs(os.path.dirname(location))
 
-        with open(location, "w", encoding=encoding) as f:
-            self.print_debug(f"WRITE: {location}")
-            return f.write(str(data))
+        self.print_debug(f"WRITE: {location}")
+        try:
+            with open(location, "w", encoding=encoding) as f:
+                return f.write(data)
+        except TypeError:
+            with open(location, "wb") as f:
+                return f.write(data)
 
     def old_files(self):
         for path, dirs, files in os.walk(self.dest):
