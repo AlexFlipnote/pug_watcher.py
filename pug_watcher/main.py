@@ -62,6 +62,7 @@ def shell():
         "watch": config.get("watch", args.watch),
         "path": config.get("path", args.path),
         "debug": config.get("debug", args.debug),
+        "scss_compressed": config.get("scss_compressed", False),
         "variables": config.get("variables", {})
     }
 
@@ -76,10 +77,12 @@ def shell():
 
     pug = Pug(src, dest, debug=settings["debug"])
 
-    if settings["watch"]:
-        print("Compiling everything first...")
-        pug.compiler(variables=settings["variables"])
+    print(f"Compiling from source folder '{src}' to destination folder '{dest}'")
+    before = time.monotonic()
+    pug.compiler(variables=settings["variables"], scss_compressed=settings["scss_compressed"])
+    print(f"Done compiling | {int((time.monotonic() - before) * 1000)}ms")
 
+    if settings["watch"]:
         print(f"Started watcher from source folder '{src}' to destination folder '{dest}'")
         for changes in watch(src):
             if len(changes) == 1:
@@ -88,15 +91,11 @@ def shell():
                     pug.compiler(
                         everything=False,
                         watch_file=file,
-                        variables=settings["variables"]
+                        variables=settings["variables"],
+                        scss_compressed=settings["scss_compressed"]
                     )
                 elif change == 3:
                     pug.old_files()
-    else:
-        print(f"Compiling from source folder '{src}' to destination folder '{dest}'")
-        before = time.monotonic()
-        pug.compiler(variables=settings["variables"])
-        print(f"Done compiling | {int((time.monotonic() - before) * 1000)}ms")
 
 
 def main():

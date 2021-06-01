@@ -1,5 +1,6 @@
 import os
 import re
+import sass
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -10,8 +11,9 @@ class Pug:
         self.dest = dest
         self.debug = debug
 
-        self.ignore = r"_.*\.pug"
-        self.compile = r".*\.pug"
+        self.ignore = r"_.*\.(pug|scss)"
+        self.re_compile_pug = r".*\.pug"
+        self.re_compile_scss = r".*\.scss"
 
         self.env = Environment(
             loader=FileSystemLoader(self.src),
@@ -21,16 +23,6 @@ class Pug:
     def print_debug(self, text):
         if self.debug:
             print(text)
-
-    def render(self, path: str, filename: str, variables: dict = {}):
-        pretty_location = path.replace(os.sep, "/")
-        pug_file_location = pretty_location.replace(self.src, "./")
-        self.print_debug(f"RENDER: {pretty_location} -> {filename}")
-
-        try:
-            return self.env.get_template(f"{pug_file_location}/{filename}").render(variables)
-        except Exception as e:
-            print(f"ERROR {pretty_location} -> {filename}: {e}")
 
     def read(self, location: str, encoding="utf8"):
         self.print_debug(f"READ: {location}")
@@ -58,7 +50,7 @@ class Pug:
             # Remove unused files
             for file in files:
                 pwd = os.path.join(path, file)
-                dist = pwd.replace(self.dest, self.src).replace(".html", ".pug")
+                dist = pwd.replace(self.dest, self.src).replace(".html", ".pug").replace(".css", ".scss")
                 if not os.path.exists(dist):
                     os.remove(pwd)
                     self.print_debug(f"DELETE: {pwd}")
@@ -70,21 +62,33 @@ class Pug:
                     os.rmdir(folder_path)
                     self.print_debug(f"DELETE: {folder_path}")
 
-    def compile_pug(self, file: str, path: str = None, variables: dict = {}):
+    def render_pug(self, path: str, filename: str, variables: dict = {}):
+        pretty_location = path.replace(os.sep, "/")
+        pug_file_location = pretty_location.replace(self.src, "./")
+        self.print_debug(f"RENDER: {pretty_location} -> {filename}")
+
+        try:
+            return self.env.get_template(f"{pug_file_location}/{filename}").render(variables)
+        except Exception as e:
+            print(f"ERROR {pretty_location} -> {filename}: {e}")
+
+    def compile_dynamic(self, file: str, path: str = None, engine: str = "pug", variables: dict = {}, scss_compressed: bool = False):
         if not path:
             path = os.path.dirname(file)
             file = os.path.basename(file)
 
         pwd = os.path.join(path, file)
+        dist = pwd.replace(self.src, self.dest)
 
         if re.compile(self.ignore).search(file):
             self.print_debug(f"SKIPPED: {pwd}")
             return
 
-        dist = pwd.replace(self.src, self.dest)
-        if re.compile(self.compile).search(file):
-            data = self.render(path, file, variables)
-            dist = dist.replace(".pug", ".html")
+        self.print_debug(f"RENDER: {path} -> {file}")
+        if engine == "pug":
+            dist, data = self.compile_pug(dist, file, path, variables=variables)
+        elif engine == "scss":
+            dist, data = self.compile_scss(dist, file, path, scss_compressed=scss_compressed)
         else:
             data = self.read(pwd)
 
@@ -93,12 +97,50 @@ class Pug:
         else:
             print(f"ERROR {pwd}: Data content was empty, skipping")
 
-    def compiler(self, everything: bool = True, watch_file: str = None, variables: dict = {}):
+    def compile_pug(self, dist: str, file: str, path: str = None, variables: dict = {}):
+        if re.compile(self.re_compile_pug).search(file):
+
+            pretty_location = path.replace(os.sep, "/")
+            pug_file_location = pretty_location.replace(self.src, "./")
+
+            try:
+                data = self.env.get_template(f"{pug_file_location}/{file}").render(variables)
+            except Exception as e:
+                print(f"ERROR {pretty_location} -> {file}: {e}")
+                return None, None
+
+            dist = dist.replace(".pug", ".html")
+            return dist, data
+        return None, None
+
+    def compile_scss(self, dist: str, file: str, path: str = None, scss_compressed: bool = False):
+        if re.compile(self.re_compile_scss).search(file):
+            with open(f"{path}/{file}", "r", encoding="utf8") as f:
+                try:
+                    output_style = "compressed" if scss_compressed else "nested"
+                    data = sass.compile(string=f.read(), output_style=output_style)
+                except Exception as e:
+                    print(f"ERROR {path} -> {file}: {e}")
+                    return None, None
+
+            dist = dist.replace(".scss", ".css")
+            return dist, data
+        return None, None
+
+    def compiler(self, everything: bool = True, watch_file: str = None, variables: dict = {}, scss_compressed: bool = False):
         if everything:
             for path, dirs, files in os.walk(self.src):
                 for file in files:
-                    self.compile_pug(file, path, variables)
+                    ext = file.split(".")[-1]
+                    self.compile_dynamic(
+                        file, path, engine=ext,
+                        variables=variables, scss_compressed=scss_compressed
+                    )
         else:
-            self.compile_pug(watch_file, variables=variables)
+            ext = watch_file.split(".")[-1]
+            self.compile_dynamic(
+                watch_file, engine=ext,
+                variables=variables, scss_compressed=scss_compressed
+            )
 
         self.old_files()
