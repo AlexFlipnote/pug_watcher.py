@@ -117,8 +117,11 @@ class Pug:
         if re.compile(self.re_compile_scss).search(file):
             with open(f"{path}/{file}", "r", encoding="utf8") as f:
                 try:
-                    output_style = "compressed" if scss_compressed else "nested"
-                    data = sass.compile(string=f.read(), output_style=output_style)
+                    data = sass.compile(
+                        string=f.read(),
+                        output_style="compressed" if scss_compressed else "nested",
+                        include_paths=[path]
+                    )
                 except Exception as e:
                     print(f"ERROR {path} -> {file}: {e}")
                     return None, None
