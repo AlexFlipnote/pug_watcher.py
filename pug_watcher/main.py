@@ -43,10 +43,6 @@ def shell():
     except Exception as e:
         kill(0, e)
 
-    if len(sys.argv) == 1:
-        parser.print_help(sys.stderr)
-        kill(1)
-
     if args.version:
         kill(0, f"pug_watcher v{pug_watcher.__version__}")
 
@@ -62,6 +58,7 @@ def shell():
         "watch": config.get("watch", args.watch),
         "path": config.get("path", args.path),
         "debug": config.get("debug", args.debug),
+        "enable_scss": config.get("enable_scss", True),
         "scss_compressed": config.get("scss_compressed", False),
         "variables": config.get("variables", {})
     }
@@ -75,11 +72,17 @@ def shell():
     else:
         src, dest = "./src", "./dist"
 
-    pug = Pug(src, dest, debug=settings["debug"])
+    pug = Pug(
+        src, dest,
+        variables=settings["variables"],
+        debug=settings["debug"],
+        enable_scss=settings["enable_scss"],
+        scss_compressed=settings["scss_compressed"]
+    )
 
     print(f"Compiling from source folder '{src}' to destination folder '{dest}'")
     before = time.monotonic()
-    pug.compiler(variables=settings["variables"], scss_compressed=settings["scss_compressed"])
+    pug.compiler()
     print(f"Done compiling | {int((time.monotonic() - before) * 1000)}ms")
 
     if settings["watch"]:
@@ -88,12 +91,7 @@ def shell():
             if len(changes) == 1:
                 change, file = next(iter(changes), (None, ""))
                 if change == 2 and file:
-                    pug.compiler(
-                        everything=False,
-                        watch_file=file,
-                        variables=settings["variables"],
-                        scss_compressed=settings["scss_compressed"]
-                    )
+                    pug.compiler(everything=False, watch_file=file)
                 elif change == 3:
                     pug.old_files()
 
@@ -103,4 +101,6 @@ def main():
     try:
         shell()
     except KeyboardInterrupt:
-        print("Stopping process...")
+        print("CTRL+C detected, stopping process...")
+    except IOError as e:
+        print(f"{e}\n\nKilling pug_watcher...")

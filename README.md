@@ -17,6 +17,7 @@ watch:           bool  # If it should watch the paths in question for changes (D
 path:            str   # The paths to watch/compile like 'source/dir:dest/dir' (Default: src:dist)
 debug:           bool  # If the compiler should show what it does (Default: false)
 variables:       dict  # A list of variables to be used in Pug (Default: {})
+enable_scss:     bool  # If pug_watcher should use SCSS instead of CSS on source files (Default: True)
 scss_compressed: bool  # If the SCSS compiled should be compressed or not (Default: false)
 ```
 #### Variables example
