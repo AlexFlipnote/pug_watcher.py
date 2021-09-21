@@ -130,9 +130,9 @@ class Pug:
 
     def compiler(self, everything: bool = True, watch_file: str = None):
         if not os.path.isdir(self.src):
-            raise IOError(f"ERROR: Couldn't find source folder '{self.src}'")
+            raise FileNotFoundError(f"ERROR: Couldn't find source folder '{self.src}'")
         if not os.path.isdir(self.dest):
-            raise IOError(f"ERROR: Couldn't find destination folder '{self.dest}'")
+            os.makedirs(self.dest)
 
         if everything:
             for path, dirs, files in os.walk(self.src):
